@@ -76,4 +76,48 @@ public interface glassblowerConfig extends Config
 		return false;
 	}
 
+	@ConfigItem(
+			keyName = "setCustomTickDelays",
+			name = "Set Custom Tick Delays",
+			description = "Don't change this unless you know what you are doing.",
+			position = 3
+	)
+	default boolean setCustomTickDelays()
+	{
+		return false;
+	}
+	@ConfigItem(
+			keyName = "tickDelays",
+			name = "Tick Delays",
+			description = "Tick Delays",
+			position = 5,
+			hidden = true,
+			unhide = "setCustomTickDelays"
+	)
+	default String tickDelays()
+	{
+		return "1,3,1,2";
+	}
+	@ConfigItem(
+			keyName = "setCustomSleepDelays",
+			name = "Set Custom Sleep Delays",
+			description = "Don't change this unless you know what you are doing.",
+			position = 6
+	)
+	default boolean setCustomSleepDelays()
+	{
+		return false;
+	}
+	@ConfigItem(
+			keyName = "sleepDelays",
+			name = "Sleep Delays",
+			description = "Sleep Delays",
+			position = 8,
+			hidden = true,
+			unhide = "setCustomSleepDelays"
+	)
+	default String sleepDelays()
+	{
+		return "60,350,100,100";
+	}
 }

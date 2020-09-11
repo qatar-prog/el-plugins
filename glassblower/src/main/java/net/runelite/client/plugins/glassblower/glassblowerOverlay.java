@@ -54,7 +54,7 @@ class glassblowerOverlay extends OverlayPanel
         tableComponent.addRow("Time:", formatDuration(duration.toMillis(), timeFormat));
         tableComponent.addRow("Status:", plugin.outputStatus);
         tableComponent.addRow("Blowing: ", plugin.objectToBlowName);
-        tableComponent.addRow("Waiting:", Integer.toString(plugin.tickTimer));
+        tableComponent.addRow("Glass:", String.valueOf(plugin.currentAmountGlass)+"(-"+String.valueOf(plugin.startAmountGlass-plugin.currentAmountGlass)+")");
 
 
         if (!tableComponent.isEmpty())
