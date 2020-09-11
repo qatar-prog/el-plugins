@@ -120,4 +120,15 @@ public interface glassblowerConfig extends Config
 	{
 		return "60,350,100,100";
 	}
+
+	@ConfigItem(
+			keyName = "fastBank",
+			name = "Bank Fast",
+			description = "Banks faster than normal.",
+			position = 9
+	)
+	default boolean fastBank()
+	{
+		return false;
+	}
 }

@@ -115,6 +115,7 @@ public class glassblowerPlugin extends Plugin
 	String status;
 	String outputStatus;
 	int tickTimer;
+	int clientTickTimer;
 	MenuEntry targetMenu;
 
 	int objectToBlowId;
@@ -152,6 +153,7 @@ public class glassblowerPlugin extends Plugin
 		// runs on plugin startup
 		botTimer = Instant.now();
 		tickTimer=0;
+		clientTickTimer=0;
 		overlayManager.add(overlay);
 		updateObjectToBlowId();
 		firstTime=true;
@@ -168,6 +170,55 @@ public class glassblowerPlugin extends Plugin
 		// runs on plugin shutdown
 		overlayManager.remove(overlay);
 		log.info("Plugin stopped");
+	}
+
+	@Subscribe
+	private void onClientTick(ClientTick clientTick){
+		if(clientTickTimer>0){
+			clientTickTimer--;
+			return;
+		}
+		clientTickTimer+=utils.getRandomIntBetweenRange(12,16);
+
+		if(!config.fastBank()){
+			return;
+		}
+		if(status==null){
+			return;
+		}
+
+		switch(status){
+			case "OPENING_BANK":
+				openNearestBank();
+				status="DEPOSIT_BLOWN";
+				break;
+			case "DEPOSIT_BLOWN":
+				if(!utils.isBankOpen()){
+					break;
+				}
+				targetMenu = new MenuEntry("Deposit-All", "<col=ff9040>"+objectToBlowName+"</col>", 8,1007, utils.getInventoryWidgetItem(objectToBlowId).getIndex(),983043,false);
+				utils.delayMouseClick(getRandomNullPoint(),sleepDelay());
+				status="WITHDRAWING_GLASS";
+				break;
+			case "WITHDRAWING_GLASS":
+				if(utils.bankContains(1775,27)){
+					targetMenu = new MenuEntry("Withdraw-All", "<col=ff9040>Molten glass</col>", 7,1007, utils.getBankItemWidget(1775).getIndex(),786444,false);
+					utils.delayMouseClick(getRandomNullPoint(),sleepDelay());
+				} else {
+					utils.sendGameMessage("Ran out of glass");
+					shutDown();
+				}
+				status="CLOSING_BANK";
+				break;
+			case "CLOSING_BANK":
+				utils.pressKey(KeyEvent.VK_ESCAPE);
+				tickTimer+=tickDelay();
+				break;
+		}
+		//OPENING_BANK
+		//DEPOSITING_BLOWN
+		//WITHDRAWING_GLASS
+		//CLOSING_BANK
 	}
 
 	@Subscribe
@@ -204,20 +255,6 @@ public class glassblowerPlugin extends Plugin
 				}
 				tickTimer+=tickDelay();
 				break;
-			case "CLOSING_BANK":
-				utils.pressKey(KeyEvent.VK_ESCAPE);
-				tickTimer+=tickDelay();
-				break;
-			case "WITHDRAWING_GLASS":
-				if(utils.bankContains(1775,27)){
-					targetMenu = new MenuEntry("Withdraw-All", "<col=ff9040>Molten glass</col>", 7,1007, utils.getBankItemWidget(1775).getIndex(),786444,false);
-					utils.delayMouseClick(getRandomNullPoint(),sleepDelay());
-				} else {
-					utils.sendGameMessage("Ran out of glass");
-					shutDown();
-				}
-				tickTimer+=tickDelay();
-				break;
 			case "NEED_TO_BLOW":
 				if(firstTime) {
 					targetMenu = new MenuEntry("Use","Use",1785,38,utils.getInventoryWidgetItem(1785).getIndex(),9764864,false);
@@ -234,18 +271,44 @@ public class glassblowerPlugin extends Plugin
 				interactWithMultiMenu();
 				tickTimer+=(2+tickDelay());
 				break;
-			case "DEPOSIT_BLOWN":
-				targetMenu = new MenuEntry("Deposit-All", "<col=ff9040>"+objectToBlowName+"</col>", 8,1007, utils.getInventoryWidgetItem(objectToBlowId).getIndex(),983043,false);
-				utils.delayMouseClick(getRandomNullPoint(),sleepDelay());
-				tickTimer+=tickDelay();
-				break;
 			case "DEPOSIT_INVENTORY":
 				targetMenu = new MenuEntry("Deposit inventory","",1,57,-1,786473,false);
 				utils.delayMouseClick(getRandomNullPoint(),sleepDelay());
 				tickTimer+=tickDelay();
 				break;
 			case "OPENING_BANK":
+				if(config.fastBank()){
+					break;
+				}
 				openNearestBank();
+				tickTimer+=tickDelay();
+				break;
+			case "DEPOSIT_BLOWN":
+				if(config.fastBank()){
+					break;
+				}
+				targetMenu = new MenuEntry("Deposit-All", "<col=ff9040>"+objectToBlowName+"</col>", 8,1007, utils.getInventoryWidgetItem(objectToBlowId).getIndex(),983043,false);
+				utils.delayMouseClick(getRandomNullPoint(),sleepDelay());
+				tickTimer+=tickDelay();
+				break;
+			case "WITHDRAWING_GLASS":
+				if(config.fastBank()){
+					break;
+				}
+				if(utils.bankContains(1775,27)){
+					targetMenu = new MenuEntry("Withdraw-All", "<col=ff9040>Molten glass</col>", 7,1007, utils.getBankItemWidget(1775).getIndex(),786444,false);
+					utils.delayMouseClick(getRandomNullPoint(),sleepDelay());
+				} else {
+					utils.sendGameMessage("Ran out of glass");
+					shutDown();
+				}
+				tickTimer+=tickDelay();
+				break;
+			case "CLOSING_BANK":
+				if(config.fastBank()){
+					break;
+				}
+				utils.pressKey(KeyEvent.VK_ESCAPE);
 				tickTimer+=tickDelay();
 				break;
 
