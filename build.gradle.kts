@@ -112,7 +112,7 @@ subprojects {
             doLast {
                 copy {
                     from("./build/libs/")
-                    into(System.getProperty("user.home") + "/Documents/JavaProjects/My Plugins Jars")
+                    into(System.getProperty("user.home") + "/.runelite/externalmanager")
                 }
             }
         }

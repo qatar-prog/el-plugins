@@ -42,4 +42,42 @@ public interface superglassmakerConfig extends Config
 	{
 		return true;
 	}
+
+	@ConfigItem(
+			keyName = "useCustomDelays",
+			name = "Use custom delays",
+			description = "Enable this to set custom delays.",
+			position = 2
+	)
+	default boolean useCustomDelays()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+			keyName = "instructions",
+			name = "",
+			description = "Instructions. Don't enter anything into this field",
+			position = 3,
+			hidden = true,
+			unhide = "useCustomDelays"
+	)
+	default String instructions()
+	{
+		return "Please enter your custom delays below, they should be in the form:" +
+				"\"minimum,maximum,target,variance\"";
+	}
+
+	@ConfigItem(
+			keyName = "customDelays",
+			name = "Set Custom Delays",
+			description = "Set custom delays using this.",
+			position = 4,
+			hidden = true,
+			unhide = "useCustomDelays"
+	)
+	default String customDelays()
+	{
+		return "1,5,3,1";
+	}
 }

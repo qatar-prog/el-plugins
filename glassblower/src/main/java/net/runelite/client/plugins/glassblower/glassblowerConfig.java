@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Owain van Brakel <https:github.com/Owain94>
+ * Copyright (c) 2018, Andrew EP | ElPinche256 <https://github.com/ElPinche256>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -22,18 +22,33 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+package net.runelite.client.plugins.glassblower;
 
-rootProject.name = "Elliott Plugins"
+import java.time.Instant;
+import java.util.function.Consumer;
+import net.runelite.client.config.Button;
+import net.runelite.client.config.Config;
+import net.runelite.client.config.ConfigGroup;
+import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.ConfigSection;
+import net.runelite.client.config.ConfigTitleSection;
+import net.runelite.client.config.Range;
+import net.runelite.client.config.Title;
 
-include(":superglassmaker")
-include(":glassblower")
+@ConfigGroup("glassblowerConfig")
 
-for (project in rootProject.children) {
-    project.apply {
-        projectDir = file(name)
-        buildFileName = "$name.gradle.kts"
+public interface glassblowerConfig extends Config
+{
+	@ConfigItem(
+			keyName = "type",
+			name = "Type to blow",
+			description = "",
+			enumClass = glassblowerType.class,
+			position = 0
+	)
+	default glassblowerType type()
+	{
+		return glassblowerType.LIGHT_ORB;
+	}
 
-        require(projectDir.isDirectory) { "Project '${project.path} must have a $projectDir directory" }
-        require(buildFile.isFile) { "Project '${project.path} must have a $buildFile build script" }
-    }
 }
