@@ -13,6 +13,7 @@ import net.runelite.api.queries.TileQuery;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
+import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.plugins.PluginType;
@@ -104,12 +105,21 @@ public class glassblowerPlugin extends Plugin
 	OverlayManager overlayManager;
 
 	@Inject
+	private ItemManager itemManager;
+
+
+	@Inject
 	private glassblowerOverlay overlay;
 
 	Instant botTimer;
 	String status;
+	String outputStatus;
 	int tickTimer;
 	MenuEntry targetMenu;
+
+	int objectToBlowId;
+	String objectToBlowName = "";
+	boolean firstTime;
 
 	// Provides our config
 	@Provides
@@ -138,6 +148,9 @@ public class glassblowerPlugin extends Plugin
 		tickTimer=0;
 		log.info("Plugin started");
 		overlayManager.add(overlay);
+		updateObjectToBlowId();
+		firstTime=true;
+		outputStatus="";
 	}
 
 	@Override
@@ -151,12 +164,26 @@ public class glassblowerPlugin extends Plugin
 	@Subscribe
 	private void onGameTick(GameTick gameTick)
 	{
+		log.info("------------------------");
+		objectToBlowName=itemManager.getItemDefinition(objectToBlowId).getName();
 		// runs every gametick
 		status = getStatus();
+		if(!status.equals("TICK_TIMER")){
+			outputStatus=status;
+		}
 		log.info(status);
+		log.info(objectToBlowName);
+		log.info(Integer.toString(objectToBlowId));
 		switch (status){
 			case "BLOWING":
+				if(utils.inventoryContains(1775)){
+					tickTimer=3;
+				} else {
+					tickTimer=tickDelay();
+				}
+				break;
 			case "TAKING_A_BREATH":
+				tickTimer+=tickDelay();
 			case "TICK_TIMER":
 				break;
 			case "NO_PIPE":
@@ -188,30 +215,44 @@ public class glassblowerPlugin extends Plugin
 				tickTimer+=tickDelay();
 				break;
 			case "NEED_TO_BLOW":
-				if(client.getWidget(270,0)==null) {
-					targetMenu = new MenuEntry("Use", "<col=ff9040>Glassblowing pipe<col=ffffff> -> <col=ff9040>Molten glass", 1775,31, utils.getInventoryWidgetItem(1775).getIndex(),9764864,false);
-				} else {
-					targetMenu = new MenuEntry("Make", "<col=ff9040>Lantern lens</col>", 1,57, -1,17694740,false);
+				log.info(String.valueOf(firstTime));
+				if(firstTime) {
+					targetMenu = new MenuEntry("Use","Use",1785,38,utils.getInventoryWidgetItem(1785).getIndex(),9764864,false);
+					utils.delayMouseClick(getRandomNullPoint(),sleepDelay());
+					firstTime=false;
+					tickTimer+=tickDelay();
+					break;
 				}
+				targetMenu = new MenuEntry("Use", "<col=ff9040>Glassblowing pipe<col=ffffff> -> <col=ff9040>Molten glass", 1775,31, utils.getInventoryWidgetItem(1775).getIndex(),9764864,false);
+				utils.delayMouseClick(getRandomNullPoint(),sleepDelay());
+				tickTimer+=(2+tickDelay());
+				break;
+			case "SELECT_MENU":
+				interactWithMultiMenu();
+				tickTimer+=(2+tickDelay());
+				break;
+			case "DEPOSIT_BLOWN":
+				targetMenu = new MenuEntry("Deposit-All", "<col=ff9040>"+objectToBlowName+"</col>", 8,1007, utils.getInventoryWidgetItem(objectToBlowId).getIndex(),983043,false);
 				utils.delayMouseClick(getRandomNullPoint(),sleepDelay());
 				tickTimer+=tickDelay();
 				break;
-			case "BANKING_FOR_GLASS":
-				if(utils.isBankOpen()){
-					targetMenu = new MenuEntry("Deposit-All", "<col=ff9040>Lantern lens</col>", 8,1007, utils.getInventoryWidgetItem(4542).getIndex(),983043,false);
-					utils.delayMouseClick(getRandomNullPoint(),sleepDelay());
-				} else {
-					openNearestBank();
-				}
+			case "DEPOSIT_INVENTORY":
+				targetMenu = new MenuEntry("Deposit inventory","",1,57,-1,786473,false);
+				utils.delayMouseClick(getRandomNullPoint(),sleepDelay());
 				tickTimer+=tickDelay();
 				break;
+			case "OPENING_BANK":
+				openNearestBank();
+				tickTimer+=tickDelay();
+				break;
+
 		}
 	}
 
 	@Subscribe
 	private void onMenuOptionClicked(MenuOptionClicked event)
 	{
-		//log.info(event.toString());
+		log.info(event.toString());
 		if(targetMenu!=null){
 			event.consume();
 			client.invokeMenuAction(targetMenu.getOption(), targetMenu.getTarget(), targetMenu.getIdentifier(), targetMenu.getOpcode(),
@@ -223,6 +264,9 @@ public class glassblowerPlugin extends Plugin
 
 	private String getStatus()
 	{
+		if(client.getLocalPlayer().getAnimation()==884){
+			return "BLOWING";
+		}
 		if(tickTimer>0){
 			tickTimer--;
 			return "TICK_TIMER";
@@ -231,30 +275,34 @@ public class glassblowerPlugin extends Plugin
 			return "NO_PIPE";
 		}
 		if(utils.isBankOpen()){ //bank open
-			if(utils.inventoryContains(1775) && utils.getInventoryItemCount(1775,false)==27){
+			if(utils.inventoryContains(1775) && utils.getInventoryItemCount(1775,false)==27){ //full glass
 				return "CLOSING_BANK";
-			} else if(utils.inventoryContains(4542)){
-				return "BANKING_FOR_GLASS";
+			} else if(utils.inventoryContains(objectToBlowId)){ //got blown items
+				return "DEPOSIT_BLOWN";
+			} else if(utils.getInventorySpace()!=27) { //invent not empty except pipe
+				return "DEPOSIT_INVENTORY";
 			} else {
-				return "WITHDRAWING_GLASS";
+				return "WITHDRAWING_GLASS"; //empty invent except pipe
 			}
 		}
-		if(utils.inventoryContains(1775)){ //glass & pipe
-			if(utils.getInventoryItemCount(1775,false)==27){ //invent full & glass & pipe
-				return "NEED_TO_BLOW";
-			} else {
-				if(client.getLocalPlayer().getAnimation()==884){ //glass & pipe & blowing
-					return "BLOWING";
-				} else { //glass & pipe & no blowing
-					if(status == null || status.equals("NOT_BLOWING") || status.equals("NEED_TO_BLOW") || status.equals("TICK_TIMER")){
-						return "NEED_TO_BLOW";
-					} else {
-						return "TAKING_A_BREATH";
-					}
+		if(utils.inventoryContains(1775)){ //inventory contains glass & pipe
+			if(utils.getInventoryItemCount(1775,false)==27){ //invent is full of glass & pipe
+				if(client.getWidget(270,1)==null || client.getWidget(270,1).isHidden()){
+					log.info("widget is null");
+					return "NEED_TO_BLOW";
+				} else {
+					return "SELECT_MENU";
+				}
+			} else { //invent has pipe but not full glass
+				if(client.getWidget(270,1)==null || client.getWidget(270,1).isHidden()){
+					log.info("widget is null");
+					return "NEED_TO_BLOW";
+				} else {
+					return "SELECT_MENU";
 				}
 			}
 		} else { //pipe & no glass
-			return "BANKING_FOR_GLASS";
+			return "OPENING_BANK";
 		}
 	}
 
@@ -286,5 +334,88 @@ public class glassblowerPlugin extends Plugin
 	private int tickDelay()
 	{
 		return (int) utils.randomDelay(false,1, 3, 1, 2);
+	}
+
+	private void updateObjectToBlowId(){
+		if(config.makeBestItem()){
+			int playerCraftingLevel = client.getRealSkillLevel(Skill.CRAFTING);
+			if(playerCraftingLevel < 4) {
+				objectToBlowId = 1919;
+			} else if(playerCraftingLevel<12) {
+				objectToBlowId = 4527;
+			} else if(playerCraftingLevel<33) {
+				objectToBlowId = 4522;
+			} else if(playerCraftingLevel<42) {
+				objectToBlowId = 229;
+			} else if(playerCraftingLevel<46) {
+				objectToBlowId = 6667;
+			} else if(playerCraftingLevel<49) {
+				objectToBlowId = 567;
+			} else if(playerCraftingLevel<87) {
+				objectToBlowId = 4542;
+			} else {
+				objectToBlowId = 10980;
+			}
+			return;
+		}
+		switch (config.type()) {
+			case BEER_GLASS:
+				objectToBlowId = 1919;
+				break;
+			case CANDLE_LANTERN:
+				objectToBlowId = 4527;
+				break;
+			case OIL_LAMP:
+				objectToBlowId = 4522;
+				break;
+			case VIAL:
+				objectToBlowId = 229;
+				break;
+			case FISHBOWL:
+				objectToBlowId = 6667;
+				break;
+			case UNPOWERED_STAFF_ORB:
+				objectToBlowId = 567;
+				break;
+			case LANTERN_LENS:
+				objectToBlowId = 4542;
+				break;
+			case LIGHT_ORB:
+				objectToBlowId = 10980;
+				break;
+		}
+	}
+
+	private void interactWithMultiMenu(){
+		int param1 = 17694734;
+		switch(objectToBlowId){
+			case 1919:
+				param1 = 17694734;
+				break;
+			case 4527:
+				param1 = 17694735;
+				break;
+			case 4522:
+				param1 = 17694736;
+				break;
+			case 229:
+				param1 = 17694737;
+				break;
+			case 6667:
+				param1 = 17694738;
+				break;
+			case 567:
+				param1 = 17694739;
+				break;
+			case 4542:
+				param1 = 17694740;
+				break;
+			case 10980:
+				param1 = 17694741;
+				break;
+
+		}
+		targetMenu = new MenuEntry("Make", "<col=ff9040>"+objectToBlowName+"</col>", 1,57, -1,param1,false);
+		utils.delayMouseClick(getRandomNullPoint(),sleepDelay());
 	}
 }

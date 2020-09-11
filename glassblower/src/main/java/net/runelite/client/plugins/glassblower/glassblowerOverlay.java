@@ -52,7 +52,8 @@ class glassblowerOverlay extends OverlayPanel
         Duration duration = Duration.between(plugin.botTimer, Instant.now());
         timeFormat = (duration.toHours() < 1) ? "mm:ss" : "HH:mm:ss";
         tableComponent.addRow("Time:", formatDuration(duration.toMillis(), timeFormat));
-        tableComponent.addRow("Status:", plugin.status);
+        tableComponent.addRow("Status:", plugin.outputStatus);
+        tableComponent.addRow("Blowing: ", plugin.objectToBlowName);
         tableComponent.addRow("Waiting:", Integer.toString(plugin.tickTimer));
 
 

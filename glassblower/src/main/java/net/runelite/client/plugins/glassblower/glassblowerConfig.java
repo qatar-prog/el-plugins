@@ -40,15 +40,40 @@ import net.runelite.client.config.Title;
 public interface glassblowerConfig extends Config
 {
 	@ConfigItem(
+			keyName = "instructions",
+			name = "",
+			description = "Instructions.",
+			position = 0,
+			hidden = false,
+			hide = "makeBestItem"
+	)
+	default String instructions()
+	{
+		return "Please select what item you would like to blow from the dropdown menu below.";
+	}
+
+	@ConfigItem(
 			keyName = "type",
-			name = "Type to blow",
-			description = "",
-			enumClass = glassblowerType.class,
-			position = 0
+			name = "",
+			description = "Select what you would like to blow.",
+			position = 1,
+			hidden = false,
+			hide = "makeBestItem"
 	)
 	default glassblowerType type()
 	{
 		return glassblowerType.LIGHT_ORB;
+	}
+
+	@ConfigItem(
+			keyName = "makeBestItem",
+			name = "Make Best Item",
+			description = "Toggle this to make the best item you currently can.",
+			position = 2
+	)
+	default boolean makeBestItem()
+	{
+		return false;
 	}
 
 }

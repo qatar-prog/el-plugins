@@ -123,5 +123,10 @@ subprojects {
             dirMode = 493
             fileMode = 420
         }
+
+        register<Copy>("copyDeps") {
+            from(configurations["runtimeClasspath"])
+            into(System.getProperty("user.home") + "/.runelite/externalmanager")
+        }
     }
 }
