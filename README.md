@@ -8,7 +8,7 @@ The purpose of this repository is primarily for my own learning.
 
 **Supported plugins:**
 
-You will need to add **two** repositories. Mine and Illumines's.
+You will need to add **three** repositories. Mine, Illumines's and Owain's.
 
 Mine:
 
@@ -22,6 +22,11 @@ Illumine's:
 
 **Github Repository name:** illu-plugins
 
+Owain's:
+
+**Github Repository owner:** Owain94
+
+**Github Repository name:** OpenOSRS-external-plugins-hosting
 
 
 # Credits
