@@ -27,7 +27,6 @@ rootProject.name = "Elliott Plugins"
 
 include(":superglassmaker")
 include(":glassblower")
-include(":bankstander")
 include(":ouraniaaltar")
 include(":firemaker")
 
