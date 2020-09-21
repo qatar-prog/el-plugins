@@ -27,6 +27,9 @@ rootProject.name = "Elliott Plugins"
 
 include(":superglassmaker")
 include(":glassblower")
+include(":bankstander")
+include(":ouraniaaltar")
+include(":firemaker")
 
 for (project in rootProject.children) {
     project.apply {

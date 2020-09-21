@@ -131,4 +131,15 @@ public interface glassblowerConfig extends Config
 	{
 		return false;
 	}
+
+	@ConfigItem(
+			keyName = "grandExchange",
+			name = "Grand Exchange Bank",
+			description = "Banks in the grand exchange.",
+			position = 10
+	)
+	default boolean grandExchange()
+	{
+		return false;
+	}
 }

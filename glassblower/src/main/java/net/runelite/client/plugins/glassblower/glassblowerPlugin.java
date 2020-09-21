@@ -9,6 +9,7 @@ import net.runelite.api.events.ClientTick;
 import net.runelite.api.events.ConfigButtonClicked;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.MenuOptionClicked;
+import net.runelite.api.queries.GameObjectQuery;
 import net.runelite.api.queries.TileQuery;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -25,6 +26,7 @@ import net.runelite.rs.api.RSMenuAction;
 import okhttp3.OkHttpClient;
 import org.pf4j.Extension;
 import net.runelite.client.plugins.botutils.BotUtils;
+import static net.runelite.client.plugins.botutils.Banks.BANK_SET;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -212,13 +214,9 @@ public class glassblowerPlugin extends Plugin
 				break;
 			case "CLOSING_BANK":
 				utils.pressKey(KeyEvent.VK_ESCAPE);
-				tickTimer+=tickDelay();
+				clientTickTimer+=10;
 				break;
 		}
-		//OPENING_BANK
-		//DEPOSITING_BLOWN
-		//WITHDRAWING_GLASS
-		//CLOSING_BANK
 	}
 
 	@Subscribe
@@ -318,6 +316,7 @@ public class glassblowerPlugin extends Plugin
 	@Subscribe
 	private void onMenuOptionClicked(MenuOptionClicked event)
 	{
+		log.info(event.toString());
 		if(targetMenu!=null){
 			event.consume();
 			client.invokeMenuAction(targetMenu.getOption(), targetMenu.getTarget(), targetMenu.getIdentifier(), targetMenu.getOpcode(),
@@ -340,6 +339,9 @@ public class glassblowerPlugin extends Plugin
 			return "NO_PIPE";
 		}
 		if(utils.isBankOpen()){ //bank open
+			if(config.fastBank()){
+				return status;
+			}
 			if(startAmountGlass==0){
 				startAmountGlass=utils.getBankItemWidget(1775).getItemQuantity();
 			}
@@ -367,11 +369,20 @@ public class glassblowerPlugin extends Plugin
 
 	private void openNearestBank()
 	{
-		GameObject targetObject = utils.findNearestBank();
+		if(config.grandExchange()){
+			targetMenu=new MenuEntry("Bank","<col=ffff00>Banker",18847,11,0,0,false);
+			utils.delayMouseClick(getRandomNullPoint(),sleepDelay());
+			return;
+		}
+		GameObject targetObject = new GameObjectQuery()
+				.idEquals(BANK_SET)
+				.result(client)
+				.nearestTo(client.getLocalPlayer());
 		if(targetObject!=null){
 			targetMenu = new MenuEntry("","",targetObject.getId(),4,targetObject.getLocalLocation().getSceneX(),targetObject.getLocalLocation().getSceneY(),false);
 			utils.delayMouseClick(getRandomNullPoint(),sleepDelay());
 		}
+
 	}
 
 	private Point getRandomNullPoint()

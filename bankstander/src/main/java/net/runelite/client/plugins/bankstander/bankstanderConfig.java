@@ -22,37 +22,88 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.runelite.client.plugins.ouraniaaltar;
+package net.runelite.client.plugins.bankstander;
 
+import net.runelite.client.config.Button;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 
-@ConfigGroup("ouraniaaltarConfig")
+@ConfigGroup("bankstanderConfig")
 
-public interface ouraniaaltarConfig extends Config
+public interface bankstanderConfig extends Config
 {
 	@ConfigItem(
-			keyName = "giantPouch",
-			name = "Use giant pouch",
-			description = "Use giant pouch",
+			keyName = "instructions",
+			name = "",
+			description = "Instructions.",
 			position = 0
 	)
-	default boolean giantPouch() { return true; }
+	default String instructions()
+	{
+		return "Please select what activity you would like to do below. "+
+				"Then enter the item IDs you would like to use for this activity.";
+	}
 
 	@ConfigItem(
-			keyName = "minEnergy",
-			name = "Minimum Energy",
-			description = "Minimum energy before stam pot drank",
+			keyName = "type",
+			name = "",
+			description = "Select what activity you would like to do.",
 			position = 1
 	)
-	default int minEnergy() { return 35; }
+	default bankstanderType type()
+	{
+		return bankstanderType.USE_ITEM;
+	}
 
 	@ConfigItem(
-			keyName = "minHealth",
-			name = "Minimum Health",
-			description = "Minimum health before food eaten",
+			keyName = "firstId",
+			name = "First Item ID",
+			description = "Enter the Id of the first item you will use.",
 			position = 2
 	)
-	default int minHealth() { return 65; }
+	default int firstId() { return 0; }
+
+	@ConfigItem(
+			keyName = "secondId",
+			name = "Second Item ID",
+			description = "Enter the Id of the second item you will use.",
+			position = 3,
+			hidden = true,
+			unhide = "type",
+			unhideValue = "USE_ITEM_ON_ITEM"
+	)
+	default int secondId()
+	{
+		return 0;
+	}
+
+	@ConfigItem(
+			keyName = "toolId",
+			name = "Tool ID",
+			description = "Enter the Id of the tool you will be using.",
+			position = 4,
+			hidden = true,
+			unhide = "type",
+			unhideValue = "USE_TOOL_ON_ITEM"
+	)
+	default int toolId()
+	{
+		return 0;
+	}
+
+	@ConfigItem(
+			keyName = "startButton",
+			name = "Start/Stop",
+			description = "Test button that changes variable value",
+			position = 150
+	)
+	default Button startButton()
+	{
+		return new Button();
+	}
+
+
+
+
 }

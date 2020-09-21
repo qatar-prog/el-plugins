@@ -25,11 +25,12 @@
 
 version = "0.0.5"
 
-project.extra["PluginName"] = "Ourania Crafter" // This is the name that is used in the external plugin manager panel
-project.extra["PluginDescription"] = "Crafts runes for you" // This is the description that is used in the external plugin manager panel
+project.extra["PluginName"] = "Fire Maker" // This is the name that is used in the external plugin manager panel
+project.extra["PluginDescription"] = "Makes fires for you." // This is the description that is used in the external plugin manager panel
+
 
 dependencies {
-    compileOnly(group = "com.openosrs.externals", name = "botutils", version = "3.9.3");
+    compileOnly(group = "com.openosrs.externals", name = "botutils", version = "4.2.1");
 }
 
 tasks {
