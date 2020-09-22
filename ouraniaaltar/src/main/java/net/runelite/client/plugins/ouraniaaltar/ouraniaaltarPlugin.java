@@ -12,6 +12,7 @@ import net.runelite.api.queries.TileQuery;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
+import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.plugins.PluginType;
@@ -57,6 +58,9 @@ public class ouraniaaltarPlugin extends Plugin
 	OverlayManager overlayManager;
 
 	@Inject
+	ItemManager itemManager;
+
+	@Inject
 	private ouraniaaltarConfig config;
 
 	@Inject
@@ -76,11 +80,14 @@ public class ouraniaaltarPlugin extends Plugin
 	List<Integer> REQUIRED_ITEMS = new ArrayList<>();
 	List<Integer> DEGRADED_POUCHES = new ArrayList<>();
 	List<Integer> RUNE_IDS = new ArrayList<>();
+	List<Integer> DROP_RUNE_IDS_CONFIG = new ArrayList<>();
+	List<Integer> DROP_RUNE_IDS = new ArrayList<>();
+	int ESSENCE_ID;
 	int startEss;
 	int currentEss;
 	int clientTickCounter;
 	boolean clientClick;
-	int animatingTimer;
+	int craftingTimer;
 
 	// Provides our config
 	@Provides
@@ -107,20 +114,7 @@ public class ouraniaaltarPlugin extends Plugin
 		overlayManager.add(overlay);
 		botTimer = Instant.now();
 		log.info("Plugin started");
-		runecraftProgress = 0;
-		if(config.giantPouch()){
-			REQUIRED_ITEMS = List.of(5509,5510,5512,5514,12791);
-		} else {
-			REQUIRED_ITEMS = List.of(5509,5510,5512,12791);
-		}
-		log.info(String.valueOf(REQUIRED_ITEMS));
-		DEGRADED_POUCHES = List.of(5511,5513,5515);
-		RUNE_IDS = List.of(557,556,566,560,561,564,559,562,554,555,565);
-		startEss=0;
-		currentEss=0;
-		clientTickCounter=-1;
-		clientTickBreak=0;
-		clientClick=false;
+		setValues();
 	}
 
 	@Override
@@ -128,7 +122,61 @@ public class ouraniaaltarPlugin extends Plugin
 	{
 		overlayManager.remove(overlay);
 		log.info("Plugin stopped");
+		setValues();
+	}
+
+	private void setValues()
+	{
 		runecraftProgress = 0;
+		if(config.giantPouch()){
+			REQUIRED_ITEMS = List.of(5509,5510,5512,5514,12791);
+		} else {
+			REQUIRED_ITEMS = List.of(5509,5510,5512,12791);
+		}
+		DEGRADED_POUCHES = List.of(5511,5513,5515);
+		RUNE_IDS = List.of(557,556,566,560,561,564,559,562,554,555,565);
+		startEss=0;
+		currentEss=0;
+		clientTickCounter=-1;
+		clientTickBreak=0;
+		clientClick=false;
+		craftingTimer=-1;
+		if(config.daeyalt()){
+			ESSENCE_ID = 24704;
+		} else {
+			ESSENCE_ID = 7936;
+		}
+		if(config.dropRunes()){
+			DROP_RUNE_IDS_CONFIG.clear();
+			for(String id : config.dropRunesString().split(",")){
+				try{
+					DROP_RUNE_IDS_CONFIG.add(Integer.parseInt(id));
+				} catch (Exception e) {
+					utils.sendGameMessage("INCORRECT FORMAT OF RUNE IDS IN CONFIG.");
+				}
+			}
+		}
+	}
+
+	@Subscribe
+	private void onClientTick(ClientTick clientTick)
+	{
+		if(clientTickBreak>0){
+			clientTickBreak--;
+			return;
+		}
+		clientTickBreak=utils.getRandomIntBetweenRange(4,6);
+		if(config.dropRunes()){
+			if(craftingTimer == 3){
+				if(runecraftProgress<14){
+					dropRunes();
+				}
+			}
+			if(craftingTimer == 0){
+				DROP_RUNE_IDS.clear();
+				DROP_RUNE_IDS.addAll(DROP_RUNE_IDS_CONFIG);
+			}
+		}
 	}
 
 	@Subscribe
@@ -136,7 +184,6 @@ public class ouraniaaltarPlugin extends Plugin
 	{
 		clientTickCounter=0;
 		status = checkPlayerStatus();
-
 		switch (status) {
 			case "ANIMATING":
 			case "NULL_PLAYER":
@@ -155,7 +202,7 @@ public class ouraniaaltarPlugin extends Plugin
 				withdrawRequiredItems();
 				break;
 			case "CLICKING_ALTAR":
-				animatingTimer=0;
+				DROP_RUNE_IDS.addAll(DROP_RUNE_IDS_CONFIG);
 				clickOuraniaAltar();
 				runecraftProgress++;
 				tickTimer=tickDelay();
@@ -165,6 +212,7 @@ public class ouraniaaltarPlugin extends Plugin
 				break;
 			case "TELEPORT_OURANIA":
 				teleToOurania();
+				DROP_RUNE_IDS.clear();
 				runecraftProgress++;
 				tickTimer=tickDelay();
 				break;
@@ -224,8 +272,19 @@ public class ouraniaaltarPlugin extends Plugin
 				return "Moving";
 			}
 		}
+
 		if(player.getAnimation()!=-1){
+			if(player.getAnimation()==791){
+				if(craftingTimer==-1){
+					craftingTimer=0;
+				} else {
+					craftingTimer++;
+				}
+			}
 			return "ANIMATING";
+		}
+		if(player.getAnimation()==-1){
+			craftingTimer=-1;
 		}
 		if(checkHitpoints()<40){
 			return "PLAYER_HP_LOW";
@@ -267,6 +326,7 @@ public class ouraniaaltarPlugin extends Plugin
 			} else if(runecraftProgress<15){
 				return "EMPTYING_POUCHES";
 			} else if(runecraftProgress==15){
+				craftingTimer=-1;
 				return "TELEPORT_OURANIA";
 			} else if(runecraftProgress==16){
 				return "CLICKING_LADDER";
@@ -298,9 +358,9 @@ public class ouraniaaltarPlugin extends Plugin
 	private String fillPouches()
 	{
 		if(startEss==0){
-			startEss = utils.getBankItemWidget(24704).getItemQuantity();
+			startEss = utils.getBankItemWidget(ESSENCE_ID).getItemQuantity();
 		}
-		currentEss = utils.getBankItemWidget(24704).getItemQuantity();
+		currentEss = utils.getBankItemWidget(ESSENCE_ID).getItemQuantity();
 		tickTimer=0;
 		if(client.getVar(Varbits.RUN_SLOWED_DEPLETION_ACTIVE)==0 && checkRunEnergy()<config.minEnergy()){
 			if(utils.inventoryContains(12631)){
@@ -324,42 +384,39 @@ public class ouraniaaltarPlugin extends Plugin
 				return "WITHDRAW_KARAM";
 			}
 		}
+		if(!config.giantPouch()){
+			if(runecraftProgress==0){
+				runecraftProgress=2;
+			}
+		}
 		switch(runecraftProgress){
 			case 0:
+			case 2:
 			case 6:
-				targetMenu = new MenuEntry("Withdraw-All","<col=ff9040>Daeyalt essence</col>",7,1007,utils.getBankItemWidget(24704).getIndex(),786444,false);
+				targetMenu = new MenuEntry("Withdraw-All","<col=ff9040>"+itemManager.getItemDefinition(ESSENCE_ID).getName()+"</col>",7,1007,utils.getBankItemWidget(ESSENCE_ID).getIndex(),786444,false);
 				utils.delayMouseClick(getRandomNullPoint(),sleepDelay());
 				runecraftProgress++;
-				return "WITHDRAW_ESS";
-			case 4:
-				targetMenu = new MenuEntry("Withdraw-All","<col=ff9040>Daeyalt essence</col>",7,1007,utils.getBankItemWidget(24704).getIndex(),786444,false);
-				utils.delayMouseClick(getRandomNullPoint(),sleepDelay());
-				if(!config.giantPouch()){
-					runecraftProgress=7;
-				} else {
-					runecraftProgress++;
-				}
 				return "WITHDRAW_ESS";
 			case 1:
-				targetMenu = new MenuEntry("Fill","<col=ff9040>Large pouch</col>",9,1007,utils.getInventoryWidgetItem(5512).getIndex(),983043,false);
-				utils.delayMouseClick(getRandomNullPoint(),sleepDelay());
-				runecraftProgress++;
-				return "FILL_LARGE";
-			case 2:
-				targetMenu = new MenuEntry("Fill","<col=ff9040>Medium pouch</col>",9,1007,utils.getInventoryWidgetItem(5510).getIndex(),983043,false);
-				utils.delayMouseClick(getRandomNullPoint(),sleepDelay());
-				runecraftProgress++;
-				return "FILL_MEDIUM";
-			case 3:
-				targetMenu = new MenuEntry("Fill","<col=ff9040>Small pouch</col>",9,1007,utils.getInventoryWidgetItem(5509).getIndex(),983043,false);
-				utils.delayMouseClick(getRandomNullPoint(),sleepDelay());
-				runecraftProgress++;
-				return "FILL_SMALL";
-			case 5:
 				targetMenu = new MenuEntry("Fill","<col=ff9040>Giant pouch</col>",9,1007,utils.getInventoryWidgetItem(5514).getIndex(),983043,false);
 				utils.delayMouseClick(getRandomNullPoint(),sleepDelay());
 				runecraftProgress++;
 				return "FILL_GIANT";
+			case 3:
+				targetMenu = new MenuEntry("Fill","<col=ff9040>Large pouch</col>",9,1007,utils.getInventoryWidgetItem(5512).getIndex(),983043,false);
+				utils.delayMouseClick(getRandomNullPoint(),sleepDelay());
+				runecraftProgress++;
+				return "FILL_LARGE";
+			case 4:
+				targetMenu = new MenuEntry("Fill","<col=ff9040>Medium pouch</col>",9,1007,utils.getInventoryWidgetItem(5510).getIndex(),983043,false);
+				utils.delayMouseClick(getRandomNullPoint(),sleepDelay());
+				runecraftProgress++;
+				return "FILL_MEDIUM";
+			case 5:
+				targetMenu = new MenuEntry("Fill","<col=ff9040>Small pouch</col>",9,1007,utils.getInventoryWidgetItem(5509).getIndex(),983043,false);
+				utils.delayMouseClick(getRandomNullPoint(),sleepDelay());
+				runecraftProgress++;
+				return "FILL_SMALL";
 			case 7:
 				targetMenu = new MenuEntry("Close","",1,57,11,786434,false);
 				utils.delayMouseClick(getRandomNullPoint(),sleepDelay());
@@ -539,5 +596,15 @@ public class ouraniaaltarPlugin extends Plugin
 		}
 	}
 
-
+	private void dropRunes()
+	{
+		for(int i=0;i<DROP_RUNE_IDS.size();i++){
+			if(utils.inventoryContains(DROP_RUNE_IDS.get(i))){
+				targetMenu = new MenuEntry("", "", DROP_RUNE_IDS.get(i), MenuOpcode.ITEM_DROP.getId(), utils.getInventoryWidgetItem(DROP_RUNE_IDS.get(i)).getIndex(), 9764864, false);
+				DROP_RUNE_IDS.remove(i);
+				utils.delayMouseClick(getRandomNullPoint(),sleepDelay());
+				return;
+			}
+		}
+	}
 }

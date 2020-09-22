@@ -56,6 +56,8 @@ class ouraniaaltarOverlay extends OverlayPanel
         tableComponent.addRow("Progress: ", String.valueOf(plugin.runecraftProgress));
         tableComponent.addRow("Essence: ", plugin.currentEss + " (-" + (plugin.startEss - plugin.currentEss) + ")");
         tableComponent.addRow("Delay: ", String.valueOf(plugin.tickTimer));
+        tableComponent.addRow("craftingTimer: ", String.valueOf(plugin.craftingTimer));
+        tableComponent.addRow("DROP_RUNE_IDS: ", plugin.DROP_RUNE_IDS.toString());
 
 
         if (!tableComponent.isEmpty())
@@ -67,7 +69,15 @@ class ouraniaaltarOverlay extends OverlayPanel
                     .text("El Ourania")
                     .color(ColorUtil.fromHex("#40C4FF"))
                     .build());
+            panelComponent.getChildren().add(TitleComponent.builder()
+                    .text("Elli-tt#4728")
+                    .color(ColorUtil.fromHex("#40C4FF"))
+                    .build());
             panelComponent.getChildren().add(tableComponent);
+            panelComponent.getChildren().add(TitleComponent.builder()
+                    .text("WIP DONT HATE")
+                    .color(ColorUtil.fromHex("#40C4FF"))
+                    .build());
         }
         return super.render(graphics);
     }

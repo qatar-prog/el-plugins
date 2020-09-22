@@ -34,17 +34,43 @@ public interface ouraniaaltarConfig extends Config
 {
 	@ConfigItem(
 			keyName = "giantPouch",
-			name = "Use giant pouch",
+			name = "Use Giant Pouch",
 			description = "Use giant pouch",
 			position = 0
 	)
-	default boolean giantPouch() { return true; }
+	default boolean giantPouch() { return false; }
+
+	@ConfigItem(
+			keyName = "daeyalt",
+			name = "Use Daeyalt Essence",
+			description = "Use daeyalt essence",
+			position = 1
+	)
+	default boolean daeyalt() { return false; }
+
+	@ConfigItem(
+			keyName = "dropRunes",
+			name = "Drop Runes",
+			description = "Drop runes at altar",
+			position = 2
+	)
+	default boolean dropRunes() { return false; }
+
+	@ConfigItem(
+			keyName = "dropRunesString",
+			name = "Runes To Drop",
+			description = "Runes you would like to drop.",
+			position = 4,
+			hidden = true,
+			unhide = "dropRunes"
+	)
+	default String dropRunesString() { return "554,555,556,557,558,559"; }
 
 	@ConfigItem(
 			keyName = "minEnergy",
 			name = "Minimum Energy",
 			description = "Minimum energy before stam pot drank",
-			position = 1
+			position = 13
 	)
 	default int minEnergy() { return 35; }
 
@@ -52,7 +78,7 @@ public interface ouraniaaltarConfig extends Config
 			keyName = "minHealth",
 			name = "Minimum Health",
 			description = "Minimum health before food eaten",
-			position = 2
+			position = 14
 	)
 	default int minHealth() { return 65; }
 }
